@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: papergrid-local:latest
+    container_name: papergrid
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "file:/data/db.sqlite"
+      NEXTAUTH_URL: "http://localhost:3000"
+    volumes:
+      - papergrid_data:/data
+    restart: unless-stopped
+
+volumes:
+  papergrid_data:

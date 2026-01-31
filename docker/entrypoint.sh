@@ -1,0 +1,48 @@
+#!/bin/sh
+set -eu
+
+DATA_DIR="${DATA_DIR:-/data}"
+
+# 1) 生成/复用 NEXTAUTH_SECRET（写入数据卷，避免每次重启都变化）
+if [ -z "${NEXTAUTH_SECRET:-}" ]; then
+  secret_file="$DATA_DIR/nextauth_secret"
+  if [ -f "$secret_file" ]; then
+    NEXTAUTH_SECRET="$(cat "$secret_file")"
+  else
+    NEXTAUTH_SECRET="$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")"
+    mkdir -p "$DATA_DIR"
+    printf '%s' "$NEXTAUTH_SECRET" > "$secret_file"
+  fi
+  export NEXTAUTH_SECRET
+fi
+
+# 2) 默认 NEXTAUTH_URL（反向代理后建议由用户自行覆盖）
+export NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3000}"
+
+# 3) 默认 SQLite 路径（推荐放数据卷）
+export DATABASE_URL="${DATABASE_URL:-file:$DATA_DIR/db.sqlite}"
+
+db_url="$DATABASE_URL"
+case "$db_url" in
+  file:*)
+    db_path="${db_url#file:}"
+    ;;
+  *)
+    echo "[entrypoint] DATABASE_URL 不是 file: 协议，跳过模板库初始化: $db_url" >&2
+    exec node server.js
+    ;;
+esac
+
+mkdir -p "$(dirname "$db_path")"
+
+if [ ! -f "$db_path" ]; then
+  if [ -f "/app/prisma/template.db" ]; then
+    cp "/app/prisma/template.db" "$db_path"
+    echo "[entrypoint] 已初始化数据库: $db_path"
+    echo "[entrypoint] 默认管理员账号: admin@example.com / admin123（首次登录请尽快修改）"
+  else
+    echo "[entrypoint] 缺少模板库 /app/prisma/template.db，无法初始化数据库" >&2
+  fi
+fi
+
+exec node server.js

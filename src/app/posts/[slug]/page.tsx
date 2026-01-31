@@ -1,0 +1,437 @@
+import { prisma } from '@/lib/prisma'
+import { notFound } from 'next/navigation'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { MDXContent } from '@/components/posts/mdx-content'
+import { Calendar, Clock, Eye, User, ArrowLeft, ArrowRight, Edit3, Scissors } from 'lucide-react'
+import { formatDistanceToNow, format } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
+import Link from 'next/link'
+import { TableOfContents, type HeadingItem } from '@/components/posts/table-of-contents'
+import { CommentSection } from '@/components/comments/comment-section'
+import { PostTitleSync } from '@/components/posts/post-title-sync'
+import { getSetting } from '@/lib/settings'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ViewCount } from '@/components/posts/view-count'
+import { extractHeadingsFromMarkdown } from '@/lib/markdown'
+
+export const revalidate = 60
+
+interface PostPageProps {
+  params: Promise<{
+    slug: string
+  }>
+}
+
+export default async function PostPage({ params }: PostPageProps) {
+  const { slug } = await params
+
+  const [commentsEnabled, allowGuest, ownerName, defaultAvatarUrl, ownerRole] = await Promise.all([
+    getSetting<boolean>('comments.enabled', true),
+    getSetting<boolean>('comments.allowGuest', false),
+    getSetting<string>('site.ownerName', '千叶'),
+    getSetting<string>('site.defaultAvatarUrl', ''),
+    getSetting<string>('profile.role', '全栈开发者'),
+  ])
+
+  // 获取文章详情
+  const post = await prisma.post.findFirst({
+    where: {
+      slug,
+      status: 'PUBLISHED',
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      content: true,
+      excerpt: true,
+      coverImage: true,
+      status: true,
+      publishedAt: true,
+      updatedAt: true,
+      readingTime: true,
+      categoryId: true,
+      author: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      category: {
+        select: {
+          name: true,
+          slug: true,
+        },
+      },
+      postTags: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+      },
+      viewCount: {
+        select: {
+          count: true,
+        },
+      },
+    },
+  })
+
+  if (!post) {
+    notFound()
+  }
+
+  const relatedPostsPromise = post.category
+    ? prisma.post.findMany({
+        where: {
+          status: 'PUBLISHED',
+          categoryId: post.categoryId,
+          id: {
+            not: post.id,
+          },
+        },
+        take: 4,
+        orderBy: {
+          publishedAt: 'desc',
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          coverImage: true,
+          publishedAt: true,
+          viewCount: {
+            select: { count: true },
+          },
+        },
+      })
+    : Promise.resolve([])
+
+  // 获取上一篇和下一篇文章 + 同分类相关文章
+  const [prevPost, nextPost, relatedPosts] = await Promise.all([
+    prisma.post.findFirst({
+      where: {
+        status: 'PUBLISHED',
+        publishedAt: {
+          lt: post.publishedAt!,
+        },
+      },
+      orderBy: {
+        publishedAt: 'desc',
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+      },
+    }),
+    prisma.post.findFirst({
+      where: {
+        status: 'PUBLISHED',
+        publishedAt: {
+          gt: post.publishedAt!,
+        },
+      },
+      orderBy: {
+        publishedAt: 'asc',
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+      },
+    }),
+    relatedPostsPromise,
+  ])
+
+  const headings: HeadingItem[] = extractHeadingsFromMarkdown(post.content, 3).map(
+    (heading, index) => ({
+      id: `heading-${index}`,
+      text: heading.text,
+      level: heading.level,
+    })
+  )
+
+  return (
+    <div className="min-h-screen">
+      <PostTitleSync title={post.title} />
+      {/* 文章头部 */}
+      <article className="py-12 sm:py-16 bg-transparent">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          {/* 返回按钮 */}
+          <Link href="/posts" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            返回文章列表
+          </Link>
+
+          {/* 文章标题 */}
+          <h1 className="text-3xl font-serif font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl md:text-5xl mb-6">
+            {post.title}
+          </h1>
+
+          {/* 文章摘要 */}
+          {post.excerpt && (
+            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+              {post.excerpt}
+            </p>
+          )}
+
+          {/* 文章元信息 */}
+          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span>{post.author.name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <time>
+                {post.publishedAt &&
+                  formatDistanceToNow(new Date(post.publishedAt), {
+                    addSuffix: true,
+                    locale: zhCN,
+                  })}
+              </time>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>{post.readingTime || 1} 分钟阅读</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              <span>
+                <ViewCount slug={slug} initialCount={post.viewCount?.count || 0} /> 次阅读
+              </span>
+            </div>
+            {post.updatedAt && post.publishedAt && new Date(post.updatedAt).getTime() - new Date(post.publishedAt).getTime() > 60000 && (
+              <div className="flex items-center gap-2 text-primary font-medium">
+                <Edit3 className="h-4 w-4" />
+                <span>
+                  最后编辑于 {format(new Date(post.updatedAt), 'yyyy-MM-dd HH:mm')}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* 分类和标签 */}
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            {post.category && (
+              <Link href={`/posts?category=${post.category.slug}`}>
+                <Badge variant="secondary" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
+                  {post.category.name}
+                </Badge>
+              </Link>
+            )}
+            {post.postTags.map((pt) => (
+              <Link key={pt.tag.id} href={`/posts?tag=${pt.tag.slug}`}>
+                <Badge variant="outline" className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900">
+                  #{pt.tag.name}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </article>
+      {/* 分割线与装饰 */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mb-6">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-dashed border-gray-300 dark:border-gray-700"></div>
+          </div>
+          <div className="relative flex justify-start">
+            <span className="bg-white dark:bg-gray-950 pr-3 text-gray-400 dark:text-gray-600">
+              <Scissors className="h-5 w-5" />
+            </span>
+          </div>
+        </div>
+      </div>
+      {/* 文章内容 */}
+      <section className="py-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* 主要内容 */}
+            <div className="lg:col-span-3">
+              {/* 封面图 */}
+              {post.coverImage && (
+                <div className="mb-8 overflow-hidden rounded-lg">
+                  <img
+                    src={post.coverImage}
+                    alt={post.title}
+                    className="w-full object-cover"
+                    loading="eager"
+                    decoding="async"
+                  />
+                </div>
+              )}
+
+              {/* MDX内容 */}
+              <Card className="border-none sm:border shadow-none sm:shadow-sm bg-transparent sm:bg-card">
+                <CardContent className="p-0 sm:p-8">
+                  <MDXContent content={post.content} />
+                </CardContent>
+              </Card>
+
+              {/* 上一篇/下一篇导航 */}
+              <Card className="mt-8">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    {prevPost ? (
+                      <Link
+                        href={`/posts/${prevPost.slug}`}
+                        className="group flex items-start gap-3 text-left"
+                      >
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">上一篇</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 line-clamp-2">
+                            {prevPost.title}
+                          </p>
+                        </div>
+                        <ArrowLeft className="h-5 w-5 text-gray-400 group-hover:text-blue-600" />
+                      </Link>
+                    ) : (
+                      <div />
+                    )}
+                    {nextPost ? (
+                      <Link
+                        href={`/posts/${nextPost.slug}`}
+                        className="group flex items-start gap-3 text-right"
+                      >
+                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600" />
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">下一篇</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 line-clamp-2">
+                            {nextPost.title}
+                          </p>
+                        </div>
+                      </Link>
+                    ) : (
+                      <div />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 评论区 */}
+              {commentsEnabled && (
+                <div className="mt-8">
+                  <CommentSection postSlug={slug} allowGuest={!!allowGuest} defaultAvatarUrl={defaultAvatarUrl || undefined} />
+                </div>
+              )}
+            </div>
+
+            {/* 侧边栏 */}
+            <div className="lg:col-span-1">
+              {/* 目录 */}
+              <div className="sticky top-20">
+                <TableOfContents headings={headings} />
+
+                {/* 作者信息 */}
+                <Card className="mt-6">
+                  <CardHeader>
+                    <h3 className="font-semibold">作者</h3>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12 border-2 border-gray-900 dark:border-white">
+                        <AvatarImage src={defaultAvatarUrl || post.author.image || undefined} />
+                        <AvatarFallback className="bg-gray-50 dark:bg-gray-800 text-lg font-serif font-bold text-gray-900 dark:text-white">
+                          {(ownerName || post.author.name || '千叶').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {ownerName || post.author.name || '千叶'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {ownerRole || '全栈开发者'}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 相关文章 */}
+                {relatedPosts.length > 0 && (
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <h3 className="font-semibold">相关文章</h3>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-3">
+                        {relatedPosts.map((related) => (
+                          <li key={related.id}>
+                            <Link
+                              href={`/posts/${related.slug}`}
+                              className="group block"
+                            >
+                              <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 line-clamp-2">
+                                {related.title}
+                              </p>
+                              <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                <span>
+                                  {related.publishedAt &&
+                                    formatDistanceToNow(new Date(related.publishedAt), {
+                                      addSuffix: true,
+                                      locale: zhCN,
+                                    })}
+                                </span>
+                                <span>•</span>
+                                <Eye className="inline h-3 w-3" />
+                                <span>{related.viewCount?.count || 0}</span>
+                              </div>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// 生成元数据
+export async function generateMetadata({ params }: PostPageProps) {
+  const { slug } = await params
+
+  const post = await prisma.post.findFirst({
+    where: {
+      slug,
+      status: 'PUBLISHED',
+    },
+    select: {
+      title: true,
+      excerpt: true,
+      coverImage: true,
+    },
+  })
+
+  if (!post) {
+    return {
+      title: '文章未找到',
+    }
+  }
+
+  return {
+    title: post.title,
+    description: post.excerpt || post.title,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || post.title,
+      images: post.coverImage ? [post.coverImage] : [],
+    },
+  }
+}

@@ -1,0 +1,84 @@
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono, Noto_Serif_SC } from 'next/font/google'
+import './globals.css'
+import 'katex/dist/katex.min.css'
+import { Suspense } from 'react'
+import { ThemeProvider } from '@/components/theme/theme-provider'
+import { Navbar } from '@/components/layout/navbar'
+import { Footer } from '@/components/layout/footer'
+import { SessionProvider } from '@/components/auth/session-provider'
+import { ScrollProgress } from '@/components/layout/scroll-progress'
+import { BackToTop } from '@/components/layout/back-to-top'
+import { PageTransition } from '@/components/layout/page-transition'
+import { getPublicSettings, getSetting } from '@/lib/settings'
+import { Toaster } from '@/components/ui/toaster'
+import { SiteLoading } from '@/components/layout/site-loading'
+
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
+
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
+
+const notoSerif = Noto_Serif_SC({
+  variable: '--font-noto-serif',
+  subsets: ['latin'],
+  weight: ['400', '700', '900'],
+})
+
+export async function generateMetadata(): Promise<Metadata> {
+  const title = (await getSetting<string>('site.title', '执笔为剑')) || '执笔为剑'
+  const description = (await getSetting<string>('site.description', '分享技术文章、生活记录和作品展示的个人博客'))
+  const faviconUrl = (await getSetting<string>('site.faviconUrl', '')) || ''
+  return {
+    title,
+    description,
+    ...(faviconUrl ? { icons: { icon: faviconUrl } } : {}),
+  }
+}
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  const [defaultTheme, publicSettings] = await Promise.all([
+    getSetting<string>('site.defaultTheme', 'system'),
+    getPublicSettings(),
+  ])
+
+  return (
+    <html lang="zh" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${notoSerif.variable} antialiased font-serif`}
+      >
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme={defaultTheme || 'system'}
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="min-h-screen flex flex-col">
+              <ScrollProgress />
+              <Suspense fallback={null}>
+                <SiteLoading />
+              </Suspense>
+              <Navbar settings={publicSettings} />
+              <main className="flex-1">
+                <PageTransition>{children}</PageTransition>
+              </main>
+              <Footer settings={publicSettings} />
+              <BackToTop />
+              <Toaster />
+            </div>
+          </ThemeProvider>
+        </SessionProvider>
+      </body>
+    </html>
+  )
+}

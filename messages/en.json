@@ -1,0 +1,33 @@
+{
+  "common": {
+    "home": "Home",
+    "about": "About",
+    "search": "Search",
+    "readMore": "Read More",
+    "loading": "Loading...",
+    "noResults": "No results found"
+  },
+  "nav": {
+    "home": "Home",
+    "posts": "Posts",
+    "categories": "Categories",
+    "tags": "Tags",
+    "about": "About"
+  },
+  "post": {
+    "publishedAt": "Published",
+    "readingTime": "min read",
+    "views": "views",
+    "comments": "comments",
+    "relatedPosts": "Related Posts"
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "posts": "Posts",
+    "categories": "Categories",
+    "tags": "Tags",
+    "comments": "Comments",
+    "users": "Users",
+    "settings": "Settings"
+  }
+}

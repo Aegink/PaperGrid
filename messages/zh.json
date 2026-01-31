@@ -1,0 +1,33 @@
+{
+  "common": {
+    "home": "首页",
+    "about": "关于",
+    "search": "搜索",
+    "readMore": "阅读更多",
+    "loading": "加载中...",
+    "noResults": "暂无结果"
+  },
+  "nav": {
+    "home": "首页",
+    "posts": "文章",
+    "categories": "分类",
+    "tags": "标签",
+    "about": "关于"
+  },
+  "post": {
+    "publishedAt": "发布于",
+    "readingTime": "分钟阅读",
+    "views": "阅读",
+    "comments": "评论",
+    "relatedPosts": "相关文章"
+  },
+  "admin": {
+    "dashboard": "仪表板",
+    "posts": "文章管理",
+    "categories": "分类管理",
+    "tags": "标签管理",
+    "comments": "评论管理",
+    "users": "用户管理",
+    "settings": "系统设置"
+  }
+}
