@@ -23,11 +23,17 @@ services:
     ports:
       - "6066:3000"
     environment:
+      # 建议持久化到数据卷，避免容器重建丢数据
       DATABASE_URL: "file:/data/db.sqlite"
-      # 反向代理后必须改成你的公网地址
+      # 反向代理后必须改成你的公网地址（https://your-domain），否则登录会报 UntrustedHost
       NEXTAUTH_URL: "http://localhost:6066"
       # 仅本地开发可开启（生产环境不要设置）
       AUTH_TRUST_HOST: "1"
+      # 可选：启用 /api/init（一次性），必须设置且仅通过请求头 x-init-token 传入
+      # INIT_ADMIN_TOKEN: "请替换为随机字符串"
+      # 可选：自定义 /api/init 创建的管理员初始密码（不设置则为 admin123）
+      # ADMIN_INIT_PASSWORD: "请替换为强密码"
+      NEXT_CACHE_DIR: "/data/.next-cache"
     volumes:
       - papergrid_data:/data
     restart: unless-stopped
