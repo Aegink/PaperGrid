@@ -34,21 +34,24 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_CACHE_DIR=/data/.next-cache
 
 # non-root user + 初始化数据卷目录（用于写 SQLite 与生成 NEXTAUTH_SECRET）
 RUN addgroup -g 1001 -S nodejs \
   && adduser -S nextjs -u 1001 -G nodejs \
-  && mkdir -p /data /app/prisma \
+  && mkdir -p /data /app/prisma /data/.next-cache \
   && echo "init" > /data/.keep \
   && chown -R nextjs:nodejs /data /app
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma/template.db ./prisma/template.db
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/template.db ./prisma/template.db
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --chown=nextjs:nodejs docker/entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint.sh && chown nextjs:nodejs /entrypoint.sh
+RUN chmod +x /entrypoint.sh \
+  && mkdir -p /app/.next/server/app \
+  && chown -R nextjs:nodejs /app/.next /app/public /app/prisma /entrypoint.sh
 
 USER nextjs
 EXPOSE 3000

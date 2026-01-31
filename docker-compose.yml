@@ -16,6 +16,7 @@ services:
       # INIT_ADMIN_TOKEN: "请替换为随机字符串"
       # 可选：自定义 /api/init 创建的管理员初始密码（不设置则为 admin123）
       # ADMIN_INIT_PASSWORD: "请替换为强密码"
+      NEXT_CACHE_DIR: "/data/.next-cache"
     volumes:
       - papergrid_data:/data
     restart: unless-stopped
