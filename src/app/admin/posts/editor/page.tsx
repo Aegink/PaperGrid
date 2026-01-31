@@ -39,6 +39,8 @@ function PostEditorContent() {
   })
 
   const [categories, setCategories] = useState<any[]>([])
+  const [tags, setTags] = useState<any[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [metaInfo, setMetaInfo] = useState<{ createdAt?: string; updatedAt?: string }>({})
 
   const toInputDateTime = (value?: string | Date | null) => {
@@ -75,6 +77,20 @@ function PostEditorContent() {
       })
       .catch((error) => {
         console.error('加载分类失败:', error)
+      })
+  }, [])
+
+  // 加载标签列表
+  useEffect(() => {
+    fetch('/api/tags')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.tags) {
+          setTags(data.tags)
+        }
+      })
+      .catch((error) => {
+        console.error('加载标签失败:', error)
       })
   }, [])
 
@@ -115,6 +131,11 @@ function PostEditorContent() {
               categoryId: data.post.categoryId || '',
               createdAt: toInputDateTime(data.post.createdAt),
             })
+            setSelectedTagIds(
+              Array.isArray(data.post.postTags)
+                ? data.post.postTags.map((pt: any) => pt.tagId || pt.tag?.id).filter(Boolean)
+                : []
+            )
             setMetaInfo({
               createdAt: data.post.createdAt,
               updatedAt: data.post.updatedAt,
@@ -163,7 +184,7 @@ function PostEditorContent() {
         body: JSON.stringify({
           ...formData,
           status: publish ? 'PUBLISHED' : 'DRAFT',
-          tags: [], // 暂时为空,后续添加标签功能
+          tags: selectedTagIds,
         }),
       })
 
@@ -371,6 +392,49 @@ function PostEditorContent() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>标签</Label>
+              {tags.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  暂无标签，
+                  <Link href="/admin/tags" className="text-blue-600 hover:underline">
+                    去创建
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => {
+                    const checked = selectedTagIds.includes(tag.id)
+                    return (
+                      <label
+                        key={tag.id}
+                        className={`flex items-center gap-2 rounded-full border px-3 py-1 text-sm transition-colors ${
+                          checked
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200'
+                            : 'border-gray-300 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={checked}
+                          disabled={saving}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...selectedTagIds, tag.id]
+                              : selectedTagIds.filter((id) => id !== tag.id)
+                            setSelectedTagIds(next)
+                          }}
+                        />
+                        #{tag.name}
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">可多选</p>
             </div>
 
             <div className="space-y-2">

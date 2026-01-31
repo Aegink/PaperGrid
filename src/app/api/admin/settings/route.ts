@@ -41,6 +41,17 @@ export async function GET() {
       })
     }
 
+    if (!payload.find((s) => s.key === 'ui.showDefaultAdminHint')) {
+      payload.push({
+        key: 'ui.showDefaultAdminHint',
+        value: { enabled: true },
+        group: 'ui',
+        editable: true,
+        secret: false,
+        description: '登录页显示默认管理员账号',
+      })
+    }
+
     return NextResponse.json({ settings: payload })
   } catch (error) {
     console.error('获取设置失败:', error)
@@ -68,6 +79,19 @@ export async function PATCH(request: NextRequest) {
     for (const u of updates) {
       const s = await prisma.setting.findUnique({ where: { key: u.key } })
       if (!s) {
+        if (u.key === 'ui.showDefaultAdminHint') {
+          await prisma.setting.create({
+            data: {
+              key: u.key,
+              value: u.value,
+              group: 'ui',
+              editable: true,
+              secret: false,
+            },
+          })
+          results.push({ key: u.key, updated: true })
+          continue
+        }
         results.push({ key: u.key, updated: false, reason: '不存在' })
         continue
       }
