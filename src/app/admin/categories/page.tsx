@@ -126,10 +126,17 @@ export default function CategoriesPage() {
       // 重新加载列表
       await loadCategories()
       setDialogOpen(false)
-      alert(editingCategory ? '更新成功!' : '创建成功!')
+      toast({
+        title: '成功',
+        description: editingCategory ? '分类已更新' : '分类已创建',
+      })
     } catch (error) {
       console.error('保存失败:', error)
-      alert(error instanceof Error ? error.message : '保存失败')
+      toast({
+        title: '错误',
+        description: error instanceof Error ? error.message : '保存失败',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }

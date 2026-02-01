@@ -120,10 +120,17 @@ export default function TagsPage() {
       // 重新加载列表
       await loadTags()
       setDialogOpen(false)
-      alert(editingTag ? '更新成功!' : '创建成功!')
+      toast({
+        title: '成功',
+        description: editingTag ? '标签已更新' : '标签已创建',
+      })
     } catch (error) {
       console.error('保存失败:', error)
-      alert(error instanceof Error ? error.message : '保存失败')
+      toast({
+        title: '错误',
+        description: error instanceof Error ? error.message : '保存失败',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
