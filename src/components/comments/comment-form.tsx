@@ -14,15 +14,33 @@ interface CommentFormProps {
   postSlug: string
   allowGuest?: boolean
   onSuccess?: () => void
+  parentId?: string | null
+  onCancel?: () => void
+  title?: string
+  placeholder?: string
+  compact?: boolean
+  autoFocus?: boolean
 }
 
-export function CommentForm({ postSlug, allowGuest, onSuccess }: CommentFormProps) {
+export function CommentForm({
+  postSlug,
+  allowGuest,
+  onSuccess,
+  parentId,
+  onCancel,
+  title,
+  placeholder,
+  compact,
+  autoFocus,
+}: CommentFormProps) {
   const { data: session } = useSession()
   const [content, setContent] = useState('')
   const [authorName, setAuthorName] = useState('')
   const [authorEmail, setAuthorEmail] = useState('')
   const [isPending, startTransition] = useTransition()
   const { toast } = useToast()
+  const formTitle = title || (parentId ? '回复评论' : '发表评论')
+  const formPlaceholder = placeholder || '写下你的评论...'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,6 +87,7 @@ export function CommentForm({ postSlug, allowGuest, onSuccess }: CommentFormProp
             content: content.trim(),
             authorName: session?.user ? undefined : authorName.trim(),
             authorEmail: session?.user ? undefined : authorEmail.trim(),
+            parentId: parentId || undefined,
           }),
         })
 
@@ -104,7 +123,7 @@ export function CommentForm({ postSlug, allowGuest, onSuccess }: CommentFormProp
   // 未登录状态
   if (!session && !allowGuest) {
     return (
-      <Card className="p-6">
+      <Card className={compact ? 'p-4' : 'p-6'}>
         <div className="text-center py-8">
           <LogIn className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -122,9 +141,9 @@ export function CommentForm({ postSlug, allowGuest, onSuccess }: CommentFormProp
   }
 
   return (
-    <Card className="p-4 pt-3">
+    <Card className={compact ? 'p-3' : 'p-4 pt-3'}>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-        发表评论
+        {formTitle}
       </h3>
       {!session && allowGuest && (
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
@@ -154,19 +173,27 @@ export function CommentForm({ postSlug, allowGuest, onSuccess }: CommentFormProp
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="写下你的评论..."
+          placeholder={formPlaceholder}
           rows={4}
           maxLength={1000}
           disabled={isPending}
           className="resize-none"
+          autoFocus={autoFocus}
         />
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {content.length}/1000
           </span>
-          <Button type="submit" disabled={isPending || !content.trim()}>
-            {isPending ? '发表中...' : '发表评论'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {onCancel && (
+              <Button type="button" variant="ghost" onClick={onCancel} disabled={isPending}>
+                取消
+              </Button>
+            )}
+            <Button type="submit" disabled={isPending || !content.trim()}>
+              {isPending ? '发表中...' : (parentId ? '回复' : '发表评论')}
+            </Button>
+          </div>
         </div>
       </form>
     </Card>

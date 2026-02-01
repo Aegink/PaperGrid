@@ -20,7 +20,12 @@ export function CommentSection({ postSlug, allowGuest, defaultAvatarUrl }: Comme
   return (
     <div className="space-y-6">
       <CommentForm postSlug={postSlug} allowGuest={!!allowGuest} onSuccess={handleCommentSuccess} />
-      <CommentList postSlug={postSlug} refreshTrigger={refreshTrigger} defaultAvatarUrl={defaultAvatarUrl} />
+      <CommentList
+        postSlug={postSlug}
+        refreshTrigger={refreshTrigger}
+        defaultAvatarUrl={defaultAvatarUrl}
+        allowGuest={allowGuest}
+      />
     </div>
   )
 }

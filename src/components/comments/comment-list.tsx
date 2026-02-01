@@ -6,6 +6,8 @@ import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { CommentForm } from './comment-form'
 
 interface Author {
   name: string | null
@@ -18,15 +20,22 @@ interface Comment {
   createdAt: Date
   author: Author | null
   authorName?: string | null
+  parentId?: string | null
 }
 
 interface CommentListProps {
   postSlug: string
   refreshTrigger?: number
   defaultAvatarUrl?: string
+  allowGuest?: boolean
 }
 
-export function CommentList({ postSlug, refreshTrigger, defaultAvatarUrl = '' }: CommentListProps) {
+export function CommentList({
+  postSlug,
+  refreshTrigger,
+  defaultAvatarUrl = '',
+  allowGuest,
+}: CommentListProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -81,21 +90,70 @@ export function CommentList({ postSlug, refreshTrigger, defaultAvatarUrl = '' }:
     )
   }
 
+  const sortByDate = (a: Comment, b: Comment) =>
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+
+  const repliesMap = new Map<string, Comment[]>()
+  const rootComments: Comment[] = []
+
+  for (const comment of comments) {
+    if (comment.parentId) {
+      const list = repliesMap.get(comment.parentId) || []
+      list.push(comment)
+      repliesMap.set(comment.parentId, list)
+    } else {
+      rootComments.push(comment)
+    }
+  }
+
+  rootComments.sort(sortByDate)
+  for (const list of repliesMap.values()) {
+    list.sort(sortByDate)
+  }
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
         评论 ({comments.length})
       </h3>
       <div className="space-y-4">
-        {comments.map((comment) => (
-          <CommentItem key={comment.id} comment={comment} defaultAvatarUrl={defaultAvatarUrl} />
+        {rootComments.map((comment) => (
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            replies={repliesMap.get(comment.id) || []}
+            repliesMap={repliesMap}
+            defaultAvatarUrl={defaultAvatarUrl}
+            postSlug={postSlug}
+            allowGuest={allowGuest}
+            onReplySuccess={fetchComments}
+          />
         ))}
       </div>
     </div>
   )
 }
 
-function CommentItem({ comment, defaultAvatarUrl }: { comment: Comment; defaultAvatarUrl: string }) {
+function CommentItem({
+  comment,
+  replies,
+  repliesMap,
+  defaultAvatarUrl,
+  postSlug,
+  allowGuest,
+  onReplySuccess,
+  depth = 0,
+}: {
+  comment: Comment
+  replies: Comment[]
+  repliesMap: Map<string, Comment[]>
+  defaultAvatarUrl: string
+  postSlug: string
+  allowGuest?: boolean
+  onReplySuccess?: () => void
+  depth?: number
+}) {
+  const [showReplyForm, setShowReplyForm] = useState(false)
   const displayName = comment.author?.name || comment.authorName || '匿名用户'
   const getInitials = (name: string) => {
     if (!name) return '?'
@@ -108,41 +166,90 @@ function CommentItem({ comment, defaultAvatarUrl }: { comment: Comment; defaultA
   }
 
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start gap-3">
-        {/* 头像 */}
-        <Avatar className="h-10 w-10 shrink-0">
-          <AvatarImage src={comment.author?.image || defaultAvatarUrl || undefined} />
-          <AvatarFallback className="border border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white font-serif">
-            {getInitials(displayName)}
-          </AvatarFallback>
-        </Avatar>
-
-        {/* 评论内容 */}
-        <div className="flex-1 min-w-0">
-          {/* 作者名和时间 */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-medium text-gray-900 dark:text-white">
-              {displayName}
-            </span>
-            <span className="text-gray-400">·</span>
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-              <Calendar className="h-3 w-3" />
-              <span>
-                {formatDistanceToNow(new Date(comment.createdAt), {
-                  addSuffix: true,
-                  locale: zhCN,
-                })}
-              </span>
-            </div>
-          </div>
+    <div className="space-y-3">
+      <Card className="p-4 hover:shadow-md transition-shadow">
+        <div className="flex items-start gap-3">
+          {/* 头像 */}
+          <Avatar className="h-10 w-10 shrink-0">
+            <AvatarImage src={comment.author?.image || defaultAvatarUrl || undefined} />
+            <AvatarFallback className="border border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white font-serif">
+              {getInitials(displayName)}
+            </AvatarFallback>
+          </Avatar>
 
           {/* 评论内容 */}
-          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
-            {comment.content}
-          </p>
+          <div className="flex-1 min-w-0">
+            {/* 作者名和时间 */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-medium text-gray-900 dark:text-white">
+                {displayName}
+              </span>
+              <span className="text-gray-400">·</span>
+              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                <Calendar className="h-3 w-3" />
+                <span>
+                  {formatDistanceToNow(new Date(comment.createdAt), {
+                    addSuffix: true,
+                    locale: zhCN,
+                  })}
+                </span>
+              </div>
+            </div>
+
+            {/* 评论内容 */}
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+              {comment.content}
+            </p>
+
+            {/* 操作区 */}
+            <div className="mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                onClick={() => setShowReplyForm((prev) => !prev)}
+              >
+                {showReplyForm ? '取消回复' : '回复'}
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      {showReplyForm && (
+        <div className="ml-6">
+          <CommentForm
+            postSlug={postSlug}
+            allowGuest={allowGuest}
+            parentId={comment.id}
+            compact
+            autoFocus
+            onCancel={() => setShowReplyForm(false)}
+            onSuccess={() => {
+              setShowReplyForm(false)
+              onReplySuccess?.()
+            }}
+          />
+        </div>
+      )}
+
+      {replies.length > 0 && (
+        <div className={`space-y-3 border-l pl-4 ${depth > 0 ? 'ml-6' : 'ml-4'}`}>
+          {replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              replies={repliesMap.get(reply.id) || []}
+              repliesMap={repliesMap}
+              defaultAvatarUrl={defaultAvatarUrl}
+              postSlug={postSlug}
+              allowGuest={allowGuest}
+              onReplySuccess={onReplySuccess}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

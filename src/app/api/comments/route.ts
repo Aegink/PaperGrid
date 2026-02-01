@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
         content: true,
         createdAt: true,
         authorName: true,
+        parentId: true,
         author: {
           select: {
             name: true,
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
     const guestModerationRequired = (await getSetting<boolean>('comments.guestModerationRequired', false)) ?? false
 
     const body = await request.json()
-    const { content, authorName, authorEmail } = body
+    const { content, authorName, authorEmail, parentId } = body
 
     // 检查用户是否登录
     if (!session?.user && !allowGuest) {
@@ -148,6 +149,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    let parentCommentId: string | null = null
+    if (parentId) {
+      if (typeof parentId !== 'string') {
+        return NextResponse.json({ error: '回复目标不合法' }, { status: 400 })
+      }
+      const parentComment = await prisma.comment.findFirst({
+        where: {
+          id: parentId,
+          postId: post.id,
+          status: 'APPROVED',
+        },
+        select: { id: true },
+      })
+      if (!parentComment) {
+        return NextResponse.json({ error: '回复目标不存在或未通过审核' }, { status: 400 })
+      }
+      parentCommentId = parentComment.id
+    }
+
     // 创建评论
     const shouldModerateGuest = moderationRequired ? true : guestModerationRequired
     const status = session?.user
@@ -161,6 +181,7 @@ export async function POST(request: NextRequest) {
         authorId: session?.user ? session.user.id : null,
         authorName: guestName,
         authorEmail: guestEmail,
+        parentId: parentCommentId,
         status,
       },
       select: {
