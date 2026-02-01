@@ -30,6 +30,14 @@ RUN mkdir -p /app/prisma \
 
 RUN pnpm build
 
+FROM base AS prisma-cli
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+COPY package.json ./
+RUN npm config set registry $NPM_REGISTRY \
+  && mkdir -p /app/prisma-cli \
+  && node -e "const fs=require('fs');const pkg=require('./package.json');const v=(pkg.devDependencies&&pkg.devDependencies.prisma)||(pkg.dependencies&&pkg.dependencies.prisma);if(!v){console.error('prisma version not found');process.exit(1)};fs.writeFileSync('/app/prisma-cli/package.json',JSON.stringify({private:true,dependencies:{prisma:v}},null,2))" \
+  && npm install --prefix /app/prisma-cli --omit=dev
+
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -43,10 +51,13 @@ RUN addgroup -g 1001 -S nodejs \
   && echo "init" > /data/.keep \
   && chown -R nextjs:nodejs /data /app
 
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/prisma/template.db ./prisma/template.db
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/template.db ./prisma/template.db
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/schema.prisma ./prisma/schema.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma/migrations ./prisma/migrations
+COPY --from=prisma-cli --chown=nextjs:nodejs /app/prisma-cli /app/prisma-cli
 COPY --chown=nextjs:nodejs docker/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh \

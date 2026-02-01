@@ -22,6 +22,37 @@ export NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3000}"
 # 3) 默认 SQLite 路径（推荐放数据卷）
 export DATABASE_URL="${DATABASE_URL:-file:$DATA_DIR/db.sqlite}"
 
+run_migrate() {
+  if [ "${SKIP_DB_MIGRATE:-}" = "1" ]; then
+    echo "[entrypoint] SKIP_DB_MIGRATE=1，跳过迁移"
+    return 0
+  fi
+
+  prisma_cli="/app/prisma-cli/node_modules/prisma/build/index.js"
+  schema_path="/app/prisma/schema.prisma"
+  migrations_dir="/app/prisma/migrations"
+
+  if [ ! -f "$prisma_cli" ]; then
+    echo "[entrypoint] 未发现 Prisma CLI，跳过迁移" >&2
+    return 0
+  fi
+
+  if [ ! -f "$schema_path" ]; then
+    echo "[entrypoint] 未发现 schema.prisma，跳过迁移" >&2
+    return 0
+  fi
+
+  if [ ! -d "$migrations_dir" ]; then
+    echo "[entrypoint] 未发现 migrations 目录，跳过迁移" >&2
+    return 0
+  fi
+
+  echo "[entrypoint] 运行数据库迁移（prisma migrate deploy）"
+  if ! node "$prisma_cli" migrate deploy --schema="$schema_path"; then
+    echo "[entrypoint] 数据库迁移失败，继续启动" >&2
+  fi
+}
+
 db_url="$DATABASE_URL"
 case "$db_url" in
   file:*)
@@ -29,6 +60,7 @@ case "$db_url" in
     ;;
   *)
     echo "[entrypoint] DATABASE_URL 不是 file: 协议，跳过模板库初始化: $db_url" >&2
+    run_migrate
     exec node server.js
     ;;
 esac
@@ -44,5 +76,7 @@ if [ ! -f "$db_path" ]; then
     echo "[entrypoint] 缺少模板库 /app/prisma/template.db，无法初始化数据库" >&2
   fi
 fi
+
+run_migrate
 
 exec node server.js
