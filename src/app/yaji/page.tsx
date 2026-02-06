@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { SectionHeadingAccent } from '@/components/layout/section-heading-accent'
 
 export const revalidate = 60
 
@@ -16,7 +17,7 @@ export default async function YajiPage() {
           <h1 className="text-4xl font-serif font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-4">
             雅集
           </h1>
-          <div className="mx-auto h-1 w-12 bg-gray-900 dark:bg-white mb-6 opacity-20" />
+          <SectionHeadingAccent />
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
             精选项目与作品，记录创作之路
           </p>

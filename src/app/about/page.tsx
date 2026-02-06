@@ -4,6 +4,7 @@ import { Mail, Github, MapPin, Calendar, MessageCircle } from 'lucide-react'
 import { getSetting } from '@/lib/settings'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AboutAvatarTrigger } from '@/components/profile/about-avatar-trigger'
+import { SectionHeadingAccent } from '@/components/layout/section-heading-accent'
 
 export const revalidate = 60
 
@@ -81,7 +82,7 @@ export default async function AboutPage() {
             <h1 className="text-4xl font-serif font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl mb-4">
               关于我
             </h1>
-            <div className="mx-auto h-1 w-12 bg-gray-900 dark:bg-white mb-6 opacity-20" />
+            <SectionHeadingAccent />
             <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
               了解更多关于我的信息
             </p>

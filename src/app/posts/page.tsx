@@ -8,6 +8,7 @@ import { PostFilters } from '@/components/posts/post-filters'
 import { getSetting } from '@/lib/settings'
 import { Suspense } from 'react'
 import { PostMeta } from '@/components/posts/post-meta'
+import { SectionHeadingAccent } from '@/components/layout/section-heading-accent'
 
 export const revalidate = 60
 
@@ -160,7 +161,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
             <h1 className="text-4xl font-serif font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl mb-4">
               文章列表
             </h1>
-            <div className="mx-auto h-1 w-12 bg-gray-900 dark:bg-white mb-6 opacity-20" />
+            <SectionHeadingAccent />
             <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
               浏览所有已发布的技术文章、生活记录和作品展示
             </p>

@@ -7,7 +7,8 @@ import { Github, Twitter, Mail } from 'lucide-react'
 export function Footer({ settings }: { settings?: Record<string, unknown> }) {
   const pathname = usePathname()
   const s: Record<string, unknown> = settings || {}
-  const getStr = (key: string, fallback = '') => (typeof s[key] === 'string' ? (s[key] as string) : fallback)
+  const getStr = (key: string, fallback = '') =>
+    typeof s[key] === 'string' ? (s[key] as string) : fallback
   const icp = getStr('site.footer_icp')
   const copyright = getStr('site.footer_copyright')
   const poweredBy = getStr('site.footer_powered_by')
@@ -22,19 +23,13 @@ export function Footer({ settings }: { settings?: Record<string, unknown> }) {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* 关于 */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              关于
-            </h3>
-            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              {description}
-            </p>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">关于</h3>
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">{description}</p>
           </div>
 
           {/* 快速链接 */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              快速链接
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">快速链接</h3>
             <ul className="mt-4 space-y-3">
               <li>
                 <Link
@@ -50,6 +45,14 @@ export function Footer({ settings }: { settings?: Record<string, unknown> }) {
                   className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                 >
                   文章
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/archive"
+                  className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                >
+                  归档
                 </Link>
               </li>
               <li>
@@ -81,9 +84,7 @@ export function Footer({ settings }: { settings?: Record<string, unknown> }) {
 
           {/* 分类 */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              分类
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">分类</h3>
             <ul className="mt-4 space-y-3">
               <li>
                 <Link
@@ -114,9 +115,7 @@ export function Footer({ settings }: { settings?: Record<string, unknown> }) {
 
           {/* 社交媒体 */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              联系我
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">联系我</h3>
             <div className="mt-4 flex items-center gap-4">
               <a
                 href="https://github.com"
@@ -146,22 +145,21 @@ export function Footer({ settings }: { settings?: Record<string, unknown> }) {
 
         {/* 版权信息 */}
         <div className="mt-12 border-t border-gray-200 pt-8 dark:border-gray-800">
-          <div className="text-sm text-center text-gray-600 dark:text-gray-400 space-y-2">
+          <div className="space-y-2 text-center text-sm text-gray-600 dark:text-gray-400">
             {icp && (
               <p>
-                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+                <a
+                  href="https://beian.miit.gov.cn/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-gray-900 dark:hover:text-white"
+                >
                   {icp}
                 </a>
               </p>
             )}
-            <p>
-              {copyright || `© ${new Date().getFullYear()} ${ownerName}. 保留所有权利.`}
-            </p>
-            {poweredBy && (
-              <p className="opacity-80">
-                {poweredBy}
-              </p>
-            )}
+            <p>{copyright || `© ${new Date().getFullYear()} ${ownerName}. 保留所有权利.`}</p>
+            {poweredBy && <p className="opacity-80">{poweredBy}</p>}
           </div>
         </div>
       </div>

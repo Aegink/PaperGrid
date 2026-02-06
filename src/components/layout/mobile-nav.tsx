@@ -10,7 +10,17 @@ import { useSession } from 'next-auth/react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 
-export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = true }: { isOpen?: boolean; onOpenChange?: (v: boolean) => void; side?: 'left' | 'top'; showTrigger?: boolean }) {
+export function MobileNav({
+  isOpen,
+  onOpenChange,
+  side = 'left',
+  showTrigger = true,
+}: {
+  isOpen?: boolean
+  onOpenChange?: (v: boolean) => void
+  side?: 'left' | 'top'
+  showTrigger?: boolean
+}) {
   const { data: session } = useSession()
   const [internalOpen, setInternalOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -18,7 +28,7 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
   const [isFocusInside, setIsFocusInside] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
-  
+
   const open = typeof isOpen === 'boolean' ? isOpen : internalOpen
   const setOpen = (v: boolean) => {
     if (typeof onOpenChange === 'function') onOpenChange(v)
@@ -28,10 +38,11 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
   const pathname = usePathname()
   const isAdmin = pathname?.startsWith('/admin')
   const displayName = isAdmin
-    ? (session?.user?.name || '管理员')
-    : (settings?.['site.ownerName'] || '千叶')
+    ? session?.user?.name || '管理员'
+    : settings?.['site.ownerName'] || '千叶'
   const tagline = settings?.['profile.tagline'] || '全栈开发者 / 技术分享'
-  const signature = settings?.['profile.signature'] || '“热爱技术, 喜欢分享。这里记录我的学习和成长过程。”'
+  const signature =
+    settings?.['profile.signature'] || '“热爱技术, 喜欢分享。这里记录我的学习和成长过程。”'
 
   useEffect(() => {
     setMounted(true)
@@ -88,6 +99,7 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
   const blogLinks = [
     { href: '/', label: '首页' },
     { href: '/posts', label: '文章' },
+    { href: '/archive', label: '归档' },
     { href: '/categories', label: '分类' },
     { href: '/tags', label: '标签' },
     { href: '/yaji', label: '雅集' },
@@ -110,7 +122,7 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
   const SidebarContent = (
     <div
       ref={containerRef}
-      className={`fixed inset-0 z-[100] flex ${open ? 'pointer-events-auto' : 'pointer-events-none'}`} 
+      className={`fixed inset-0 z-[100] flex ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
       aria-hidden={!open && !isFocusInside}
       inert={!open && !isFocusInside ? true : undefined}
     >
@@ -122,17 +134,17 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
 
       {/* panel (left slide-in) */}
       <div
-        className={`relative z-10 h-full w-72 transform bg-white p-6 shadow-2xl transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1) dark:bg-gray-900 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`cubic-bezier(0.16, 1, 0.3, 1) relative z-10 h-full w-72 transform bg-white p-6 shadow-2xl transition-transform duration-300 dark:bg-gray-900 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isAdmin ? 'bg-amber-500' : 'bg-primary'}`}>
-              <span className="text-sm font-bold text-white">
-                {isAdmin ? '管' : '博'}
-              </span>
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-lg ${isAdmin ? 'bg-amber-500' : 'bg-primary'}`}
+            >
+              <span className="text-sm font-bold text-white">{isAdmin ? '管' : '博'}</span>
             </div>
             <span className="text-lg font-bold tracking-tight">
-              {isAdmin ? '管理后台' : (settings?.['site.title'] || '执笔为剑')}
+              {isAdmin ? '管理后台' : settings?.['site.title'] || '执笔为剑'}
             </span>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="关闭菜单">
@@ -143,22 +155,20 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
         {/* User Info Section */}
         <div className="mb-6 space-y-4">
           <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12 border-2 border-primary/10">
-              <AvatarImage src={session?.user?.image || settings?.['site.defaultAvatarUrl'] || undefined} />
+            <Avatar className="border-primary/10 h-12 w-12 border-2">
+              <AvatarImage
+                src={session?.user?.image || settings?.['site.defaultAvatarUrl'] || undefined}
+              />
               <AvatarFallback className="bg-primary/5 text-primary">
                 {session?.user?.name?.charAt(0).toUpperCase() || 'B'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 overflow-hidden">
-              <p className="font-bold text-gray-900 dark:text-white truncate">
-                {displayName}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {tagline}
-              </p>
+              <p className="truncate font-bold text-gray-900 dark:text-white">{displayName}</p>
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{tagline}</p>
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed italic">
+          <p className="text-sm leading-relaxed text-gray-600 italic dark:text-gray-400">
             {signature}
           </p>
         </div>
@@ -167,7 +177,8 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
 
         <nav className="space-y-1">
           {links.map((link) => {
-            const active = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href))
+            const active =
+              pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href))
             return (
               <Link
                 key={link.href}
@@ -181,9 +192,10 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
           })}
         </nav>
 
-        <div className="absolute bottom-8 left-6 right-6">
+        <div className="absolute right-6 bottom-8 left-6">
           <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-            © {new Date().getFullYear()} {settings?.['site.title'] || '执笔为剑'} · Built with Next.js
+            © {new Date().getFullYear()} {settings?.['site.title'] || '执笔为剑'} · Built with
+            Next.js
           </p>
         </div>
       </div>
@@ -194,12 +206,18 @@ export function MobileNav({ isOpen, onOpenChange, side = 'left', showTrigger = t
     <>
       <div className="md:hidden">
         {showTrigger && (
-          <Button ref={triggerRef} variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="打开菜单">
+          <Button
+            ref={triggerRef}
+            variant="ghost"
+            size="icon"
+            onClick={() => setOpen(true)}
+            aria-label="打开菜单"
+          >
             <Menu className="h-5 w-5" />
           </Button>
         )}
       </div>
-      
+
       {mounted && createPortal(SidebarContent, document.body)}
     </>
   )

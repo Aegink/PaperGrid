@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { FolderOpen } from 'lucide-react'
 import Link from 'next/link'
+import { SectionHeadingAccent } from '@/components/layout/section-heading-accent'
 
 export const revalidate = 60
 
@@ -40,7 +41,7 @@ export default async function CategoriesPage() {
             <h1 className="text-4xl font-serif font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl mb-4">
               文章分类
             </h1>
-            <div className="mx-auto h-1 w-12 bg-gray-900 dark:bg-white mb-6 opacity-20" />
+            <SectionHeadingAccent />
             <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
               浏览所有文章分类,找到你感兴趣的内容
             </p>

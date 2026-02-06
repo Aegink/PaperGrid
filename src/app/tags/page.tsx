@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tag as TagIcon } from 'lucide-react'
 import Link from 'next/link'
+import { SectionHeadingAccent } from '@/components/layout/section-heading-accent'
 
 export const revalidate = 60
 
@@ -45,7 +46,7 @@ export default async function TagsPage() {
             <h1 className="text-4xl font-serif font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl mb-4">
               文章标签
             </h1>
-            <div className="mx-auto h-1 w-12 bg-gray-900 dark:bg-white mb-6 opacity-20" />
+            <SectionHeadingAccent />
             <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
               浏览所有标签,探索你感兴趣的话题
             </p>
