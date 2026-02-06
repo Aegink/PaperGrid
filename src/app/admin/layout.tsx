@@ -34,6 +34,7 @@ import { isDefaultAdmin } from '@/lib/admin-default'
 const navItems = [
   { href: '/admin', iconName: 'LayoutDashboard', label: '仪表板' },
   { href: '/admin/posts', iconName: 'FileText', label: '文章管理' },
+  { href: '/admin/files', iconName: 'Images', label: '文件管理' },
   { href: '/admin/works', iconName: 'GalleryVerticalEnd', label: '作品展示' },
   { href: '/admin/categories', iconName: 'FolderKanban', label: '分类管理' },
   { href: '/admin/tags', iconName: 'Tags', label: '标签管理' },

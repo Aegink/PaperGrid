@@ -7,7 +7,8 @@
 - Next.js App Router + React 19
 - Prisma ORM
 - NextAuth 认证
-- 管理后台（文章、标签、分类、评论、用户、系统设置）
+- 管理后台（文章、标签、分类、评论、用户、系统设置、文件管理）
+- 文件管理（本地图片上传、预览、删除、URL 回填）
 - MDX 内容支持、代码高亮、数学公式与图表
 - 国际化与深色模式
 
@@ -34,6 +35,7 @@ services:
       # 可选：自定义 /api/init 创建的管理员初始密码（不设置则为 admin123）
       # ADMIN_INIT_PASSWORD: "请替换为强密码"
       NEXT_CACHE_DIR: "/data/.next-cache"
+      MEDIA_ROOT: "/data/uploads"
     volumes:
       - papergrid_data:/data
     logging:
@@ -84,6 +86,11 @@ DATABASE_URL="file:./dev.db"
 
 NEXTAUTH_URL="http://localhost:6066"
 NEXTAUTH_SECRET="your-secret-key-change-this-in-production"
+
+# Local media storage
+MEDIA_ROOT="/data/uploads"
+MEDIA_MAX_UPLOAD_MB="10"
+MEDIA_MAX_INPUT_PIXELS="40000000"
 INIT_ADMIN_TOKEN=""
 ADMIN_INIT_PASSWORD=""
 
@@ -103,6 +110,48 @@ GOTIFY_TOKEN=""
 
 NEXT_PUBLIC_APP_URL="http://localhost:6066"
 NEXT_PUBLIC_DEFAULT_LOCALE="zh"
+```
+
+
+## 图片上传与文件管理
+
+后台新增“文件管理”子目录，支持：
+- 上传图片（仅 `jpg/jpeg/png/webp/avif`）
+- 预览、复制 URL、删除文件
+- 删除时自动检查引用（文章封面、作品图、用户头像、站点设置）
+
+默认限制：
+- 单文件上限：`10MB`
+- 压缩策略默认：`平衡`
+- 游客权限：仅可通过图片 URL 查看（无上传/删除权限）
+
+图片访问路径：
+- `GET /api/files/:id`
+
+### Nginx 防盗链（valid_referers 起步）
+
+可在反向代理中对 `/api/files/` 增加防盗链：
+
+```nginx
+location ^~ /api/files/ {
+    valid_referers none blocked server_names *.your-domain.com your-domain.com;
+
+    if ($invalid_referer) {
+        return 403;
+    }
+
+    proxy_pass http://127.0.0.1:6066;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+另外建议在 Nginx 设置上传大小限制：
+
+```nginx
+client_max_body_size 10m;
 ```
 
 ## 数据库自动初始化

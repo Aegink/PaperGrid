@@ -17,6 +17,7 @@ import {
 import { ArrowLeft, Save, Eye } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { ImagePickerDialog } from '@/components/admin/image-picker-dialog'
 
 function PostEditorContent() {
   const router = useRouter()
@@ -469,15 +470,24 @@ function PostEditorContent() {
 
             <div className="space-y-2">
               <Label htmlFor="coverImage">封面图片 URL</Label>
-              <Input
-                id="coverImage"
-                value={formData.coverImage}
-                onChange={(e) =>
-                  setFormData({ ...formData, coverImage: e.target.value })
-                }
-                placeholder="https://example.com/image.jpg"
-                disabled={saving}
-              />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  id="coverImage"
+                  className="sm:flex-1"
+                  value={formData.coverImage}
+                  onChange={(e) =>
+                    setFormData({ ...formData, coverImage: e.target.value })
+                  }
+                  placeholder="https://example.com/image.jpg"
+                  disabled={saving}
+                />
+                <ImagePickerDialog
+                  disabled={saving}
+                  triggerText="从文件管理选择"
+                  title="选择文章封面"
+                  onSelect={(url) => setFormData((prev) => ({ ...prev, coverImage: url }))}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

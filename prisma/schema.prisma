@@ -53,6 +53,7 @@ model User {
   sessions      Session[]
   posts         Post[]
   comments      Comment[]
+  mediaFiles    MediaFile[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -177,6 +178,31 @@ enum CommentStatus {
   APPROVED
   SPAM
   REJECTED
+}
+
+enum MediaCompressionMode {
+  ORIGINAL
+  BALANCED
+  HIGH
+}
+
+model MediaFile {
+  id              String               @id @default(cuid())
+  originalName    String
+  storagePath     String               @unique
+  mimeType        String
+  ext             String
+  size            Int
+  width           Int?
+  height          Int?
+  sha256          String?
+  compressionMode MediaCompressionMode @default(BALANCED)
+  uploadedBy      User?                @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedById    String?
+  createdAt       DateTime             @default(now())
+
+  @@index([createdAt])
+  @@index([uploadedById])
 }
 
 model ViewCount {

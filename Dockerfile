@@ -49,7 +49,7 @@ ENV APP_VERSION=$APP_VERSION
 # non-root user + 初始化数据卷目录（用于写 SQLite 与生成 NEXTAUTH_SECRET）
 RUN addgroup -g 1001 -S nodejs \
   && adduser -S nextjs -u 1001 -G nodejs \
-  && mkdir -p /data /app/prisma /data/.next-cache \
+  && mkdir -p /data /data/uploads /app/prisma /data/.next-cache \
   && echo "init" > /data/.keep \
   && chown -R nextjs:nodejs /data /app
 
